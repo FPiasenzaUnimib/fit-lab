@@ -7,12 +7,6 @@ def modello(x, m, b):
 def derivata_modello(x, m, b):
     return np.full_like(x, m)
 
-nascita = {
-    "gabbo": 2004,
-    "fede": 2005,
-    "ali": 2004
-}
-
 configurazione = {
     "iniziali": {"m": 1.0, "b": 0.0},
 #    "limiti": {"m": (None,None)},

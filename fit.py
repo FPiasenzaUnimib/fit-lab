@@ -13,9 +13,6 @@ from scipy import stats
 
 import sys
 
-'''
-fit.py filedati modelloDati 
-'''
 # Equivalente di LeastSquares ma con propagazione su errore in X
 class PropagatoreX:
     def __init__(self, x, y, errX, errY, modello, derivata_modello):
