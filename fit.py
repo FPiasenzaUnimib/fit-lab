@@ -1,3 +1,9 @@
+"""
+fit.py 
+
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from iminuit import Minuit
@@ -30,11 +36,15 @@ class PropagatoreX:
 if __name__ == "__main__":
     #print(f"{len(sys.argv)}")
 
+
     # se troppo pochi parametri allora quit
     if len(sys.argv) < 3:
-        print("Errore, numero parametri non sufficienti", flush=True, file=sys.stderr)
-        exit(1)
-    datiX, datiY, errX, errY = np.loadtxt(sys.argv[1]).T
+        nomeFileDati = input("Inserisci il nome del file dati: ")
+        nomeModello = input("Inserisci il nome del modulo contente i dati del modello: ")
+    else:
+        nomeFileDati = sys.argv[1]
+        nomeModello = sys.argv[2]
+    datiX, datiY, errX, errY = np.loadtxt(nomeFileDati).T
 
 
     fig, ax = plt.subplots(1,1)
@@ -43,7 +53,7 @@ if __name__ == "__main__":
     ax.errorbar(datiX, datiY, errY, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='black', markeredgecolor='red')
    
     #importazione del modulo contenente il modello e i dati relativi al modello
-    moduloModello = importlib.import_module(sys.argv[2])
+    moduloModello = importlib.import_module(nomeModello)
 
     #per facilita di utilizzo
     configModello = moduloModello.configurazione
