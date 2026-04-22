@@ -84,13 +84,15 @@ if __name__ == "__main__":
     xAxis = np.linspace(np.min(datiX), np.max(datiX), 1000)
     yAxis = moduloModello.modello(xAxis, *min.values)
 
+    ndof = len(datiX) - min.nfit
+
     #plot + label contenente risultati di fit
     ax.plot(
         xAxis, 
         yAxis, 
         label=descModello['equazione']+ "\n" +
             '\n'.join(fr"{descModello['nomi'][param]}: {min.values[param]: .3f} $\pm$ {min.errors[param]: .3f} {descModello['misure'][param]}" for param in configModello["iniziali"]) +
-            "\n" + fr"$\chi^2/$ndof: {min.fval: .3f}" + "\n" + fr"p-value: {stats.chi2.sf(min.fval, len(datiX) - min.nfit): .3f}",
+            "\n" + fr"$\chi^2/$ndof: {min.fval / ndof: .3f}" + "\n" + fr"p-value: {stats.chi2.sf(min.fval, ndof): .3f}",
         color='blue'
     )
 
