@@ -28,7 +28,13 @@ class PropagatoreX:
         dfdx = self.derivata(self.x, *params)
 
         errore = self.errY ** 2 + (dfdx * self.errX) ** 2
+        #print(fx.shape)
         return np.sum((self.y - fx)** 2 / errore) 
+
+#per non avere eX quando non serve
+def fmts(x):
+    fmt = ".3e" if abs(x) < 1 and x != 0 else ".3f"
+    return f"{x:{fmt}}"
 
 if __name__ == "__main__":
     #print(f"{len(sys.argv)}")
@@ -43,18 +49,23 @@ if __name__ == "__main__":
         nomeModello = sys.argv[2]
     datiX, datiY, errX, errY = np.loadtxt(nomeFileDati).T
 
-
-    fig, ax = plt.subplots(1,1)
-
-    #scatter plot iniziale dei dati
-    ax.errorbar(datiX, datiY, errY, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='black', markeredgecolor='red')
-   
     #importazione del modulo contenente il modello e i dati relativi al modello
     moduloModello = importlib.import_module(nomeModello)
 
     #per facilita di utilizzo
     configModello = moduloModello.configurazione
     descModello = moduloModello.descrizione
+
+    fig, ax = plt.subplots(1,1)
+
+    if 'logaritmico_x' in descModello and descModello['logaritmico_x']:
+        ax.set_xscale("log")
+    if 'logaritmico_y' in descModello and descModello['logaritmico_y']:
+        ax.set_yscale("log")
+
+    #scatter plot iniziale dei dati
+    ax.errorbar(datiX, datiY, errY, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='black', markeredgecolor='red')
+   
 
     #imposto titolo e label
     ax.set_title(descModello['titolo'])
@@ -88,8 +99,8 @@ if __name__ == "__main__":
         xAxis, 
         yAxis, 
         label=descModello['equazione']+ "\n" +
-            '\n'.join(fr"{descModello['nomi'][param]}: {min.values[param]: .3f} $\pm$ {min.errors[param]: .3f} {descModello['misure'][param]}" for param in configModello["iniziali"]) +
-            "\n" + fr"$\chi^2/$ndof: {min.fval / ndof: .3f}" + "\n" + fr"p-value: {stats.chi2.sf(min.fval, ndof): .3f}",
+            '\n'.join(fr"{descModello['nomi'][param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])} {descModello['misure'][param]}" for param in configModello["iniziali"]) +
+            "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
         color='blue'
     )
 
