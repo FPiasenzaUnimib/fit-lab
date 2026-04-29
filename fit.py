@@ -3,6 +3,7 @@ fit.py
 
 
 """
+#il codice fa schifo di per se ma funziona
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,8 +40,27 @@ def fmts(x):
 if __name__ == "__main__":
     #print(f"{len(sys.argv)}")
 
+    paramExtra = 0 
+    if '-nofit' in sys.argv:
+        paramExtra += 1
+        eseguiFit = False 
+    else:
+        eseguiFit = True
+    
+    if '-fase' in sys.argv:
+        paramExtra += 1
+        rappFase = True
+    else: 
+        rappFase = False
+
+    if '-comp' in sys.argv:
+        paramExtra += 1
+        compForzato = True
+    else:
+        compForzato = False
+
     # se troppo pochi parametri allora quit
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 3 + paramExtra:
         nomeFileDati = input("\033[30mInserisci il nome del file dati: \033[0m")
         nomeModello = input("\033[30mInserisci il nome del modulo contente i dati del modello: \033[0m")
     else:
@@ -48,7 +68,7 @@ if __name__ == "__main__":
         nomeModello = sys.argv[2]
 
     try:
-        if '-fase' in sys.argv:
+        if rappFase:
             datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
             datiY = ampiezza * np.exp(1j * fase, dtype=np.complex128)
             errY = np.sqrt((np.cos(fase)*errAmpiezza)**2 + (ampiezza * np.sin(fase) * errFase)**2) + 1j * np.sqrt((np.sin(fase * errAmpiezza))**2 + (ampiezza * np.cos(fase) * errFase)**2)
@@ -67,7 +87,7 @@ if __name__ == "__main__":
     errX = errX.real.copy()
 
 
-    if '-fase' in sys.argv or '-comp' in sys.argv or datiY.imag.any():
+    if rappFase or compForzato or datiY.imag.any():
         datiComplessi = True
         #copio in ogni caso per liberare la memoria dal file completo
         datiY = datiY.copy()
@@ -152,7 +172,7 @@ if __name__ == "__main__":
         ax.set_ylabel("y" + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
 
 
-    if not '-nofit' in sys.argv:
+    if eseguiFit:
         #imposto la cost function per il modello
         Q2modello = PropagatoreX(datiX, datiY, errX, errY, moduloModello.modello, moduloModello.derivata_modello)
         #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
