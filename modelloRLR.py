@@ -7,7 +7,7 @@ def derivata_modello(x, R, L):
     #return (L * R**2)/np.power(R**2 + (x*L)**2, 1.5)
     return np.full_like(x,0)
 
-
+#\sigma_H^2 = \sigma_|H|^2 + |H|^2\sigma_\theta^2
 configurazione = {
     "iniziali": {"R": 600, "L": 0.1},
     "limiti": {"R": (0, None), "L": (0, None)}
