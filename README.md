@@ -37,13 +37,13 @@ script con `python3 ./fit.py  <nome file dati> modello [parametri extra]`. Il mo
    def modello(x, *parametri):
      ...
    ```
-   La funzione deve essere compatibile con numpy per il corretto funzionamento dello script, ed è necessario che la segnatura sia quella descritta sopra.
+   La funzione deve essere compatibile con numpy per il corretto funzionamento dello script, ed è necessario che la segnatura sia quella descritta sopra. Nel caso    si stia usando dati complessi è possibile renderla una funzione complessa (in python i numeri complessi si scrivono come `a+bj`). 
 2. La derivata del modello:
    ```python
    def derivata_modello(x, *parametri):
      ...
    ```
-   Come sopra, deve essere compatibile con numpy. Nel caso non si volesse usare la propagazione d'errore per considerare l'errore su $x$ sarà sufficiente utilizzare la seguente:
+   Come sopra, deve essere compatibile con numpy, e può essere complessa. Nel caso non si volesse usare la propagazione d'errore per considerare l'errore su $x$ sarà sufficiente utilizzare la seguente:
    ```python
    def derivata_modello(x, *parametri):
      return np.zeros_like(x)
