@@ -27,73 +27,189 @@ class PropagatoreX:
         fx = self.modello(self.x, *params)
         dfdx = self.derivata(self.x, *params)
 
-        errore = self.errY ** 2 + (dfdx * self.errX) ** 2
-        return np.sum((self.y - fx)** 2 / errore) 
+        errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
+        #print(fx.shape)
+        return np.sum(np.abs((self.y - fx))** 2 / errore) 
+
+#per non avere eX quando non serve
+def fmts(x):
+    fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
+    return f"{x:{fmt}}"
 
 if __name__ == "__main__":
     #print(f"{len(sys.argv)}")
 
-
     # se troppo pochi parametri allora quit
     if len(sys.argv) < 3:
-        nomeFileDati = input("Inserisci il nome del file dati: ")
-        nomeModello = input("Inserisci il nome del modulo contente i dati del modello: ")
+        nomeFileDati = input("\033[30mInserisci il nome del file dati: \033[0m")
+        nomeModello = input("\033[30mInserisci il nome del modulo contente i dati del modello: \033[0m")
     else:
         nomeFileDati = sys.argv[1]
         nomeModello = sys.argv[2]
-    datiX, datiY, errX, errY = np.loadtxt(nomeFileDati).T
+
+    try:
+        if '-fase' in sys.argv:
+            datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
+            datiY = ampiezza * np.exp(1j * fase, dtype=np.complex128)
+            errY = np.sqrt((np.cos(fase)*errAmpiezza)**2 + (ampiezza * np.sin(fase) * errFase)**2) + 1j * np.sqrt((np.sin(fase * errAmpiezza))**2 + (ampiezza * np.cos(fase) * errFase)**2)
+            del ampiezza, fase, errAmpiezza, errFase
+        else:
+            datiX, datiY, errX, errY = np.loadtxt(nomeFileDati, dtype=np.complex128).T
+    
+    except Exception as err:
+        print(f"\033[31mIl caricamento del file dati è fallito:\n\tnumpy: {err}\033[0m")
+        exit(1)
 
 
-    fig, ax = plt.subplots(1,1)
+    #scarto rappresentazione complessa 
+    #copio per liberare memoria inutile
+    datiX = datiX.real.copy()
+    errX = errX.real.copy()
 
-    #scatter plot iniziale dei dati
-    ax.errorbar(datiX, datiY, errY, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='black', markeredgecolor='red')
-   
+
+    if '-fase' in sys.argv or '-comp' in sys.argv or datiY.imag.any():
+        datiComplessi = True
+        #copio in ogni caso per liberare la memoria dal file completo
+        datiY = datiY.copy()
+        errY = errY.copy()
+        print("\033[36mI valori della funzione sono complessi\033[0m")
+    else:
+        datiComplessi = False
+        print("\033[36mI valori della funzione sono reali\033[0m")
+        datiY = datiY.real.copy()
+        errY = errY.real.copy()
+
+
     #importazione del modulo contenente il modello e i dati relativi al modello
-    moduloModello = importlib.import_module(nomeModello)
+    #moduloModello = None
+    try:
+        moduloModello = importlib.import_module(nomeModello)
+
+        if not hasattr(moduloModello, "modello"):
+            raise ImportError("Il modulo non contiene il modello")
+        if not hasattr(moduloModello, "derivata_modello"):
+            raise ImportError("Il modulo non contiene la derivata del modello, necessaria per il calcolo dell'errore")
+        if not hasattr(moduloModello, "configurazione"):
+            raise ImportError("Il modulo non contiene un dizionario di configurazione")
+        if not hasattr(moduloModello, "descrizione"):
+            raise ImportError("Il modulo non contiene un dizionario di descrizione")
+        
+    except ImportError as err:
+        print(f"\033[31mL'importazione del modulo contentente il modello è fallita: \n\t{err}\033[0m", file=sys.stderr)
+        exit(1)
 
     #per facilita di utilizzo
     configModello = moduloModello.configurazione
     descModello = moduloModello.descrizione
 
+    fig, ax = plt.subplots(1,1)
+
+    if not 'iniziali' in configModello:
+        print("\033[31m'iniziali' non presente nel dizionario di configurazione\033[0m", file=sys.stderr)
+        exit(1)
+
+    if 'nomi' in descModello:
+        nomi = descModello['nomi']
+    else:
+        print("\033[33m'nomi' non presente nel dizionario di descrizione, utilizzo nomi di default\033[0m")
+        nomi = { n: n for n in configModello['iniziali']}
+
+    if 'misure' in descModello:
+        misure = descModello['misure']
+    else: 
+        print("\033[33m'misure' non presente nel dizionario di descrizione, nessuna unità di misura verrà mostrata\033[0m")
+        misure = {}
+
+    if 'scala_x' in descModello:
+        ax.set_xscale(descModello['scala_x'])
+    if 'scala_y' in descModello:
+        ax.set_yscale(descModello['scala_y'])
+
+    #scatter plot iniziale dei dati
+    if datiComplessi:
+        ax.errorbar(datiX, datiY.real, errY.real, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='orange', markeredgecolor='red')
+        ax.errorbar(datiX, datiY.imag, errY.imag, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='cyan', markeredgecolor='red')
+    else:
+        ax.errorbar(datiX, datiY, errY, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='black', markeredgecolor='red')
+   
+
     #imposto titolo e label
-    ax.set_title(descModello['titolo'])
+    if 'titolo' in descModello:
+        ax.set_title(descModello['titolo'])
+    else:
+        print("\033[33m'titolo' non presente nel dizionario di descrizione, nessun titolo verrà mostrato a schermo\033[0m")
+    
+    if 'asse_x' in nomi:
+        ax.set_xlabel(nomi['asse_x'] + (fr" ({misure['asse_x']})" if 'asse_x' in misure else ""))
+    else:
+        print("\033[33m'asse_x' non presente nel dizionario 'nomi', utilizzo label asse x default\033[0m")
+        ax.set_xlabel("x" + (fr" ({misure['asse_x']})" if 'asse_x' in misure else ""))
 
-    ax.set_xlabel(descModello['nomi']['asse_x'] + fr" {descModello['misure']['asse_x']}")
-    ax.set_ylabel(descModello['nomi']['asse_y'] + fr" {descModello['misure']['asse_y']}")
+    if 'asse_y' in nomi:
+        ax.set_ylabel(nomi['asse_y'] + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
+    else:
+        print("\033[33m'asse_y' non presente nel dizionario 'nomi', utilizzo label asse y default\033[0m")
+        ax.set_ylabel("y" + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
 
-    #imposto la cost function per il modello
-    Q2modello = PropagatoreX(datiX, datiY, errX, errY, moduloModello.modello, moduloModello.derivata_modello)
-    #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
-    min = Minuit(Q2modello, **configModello["iniziali"], name=list(configModello["iniziali"].keys()))
 
-    #utilizzo la configurazione nel modello
-    for par in configModello["iniziali"]:
-        if "limiti" in configModello and par in configModello["limiti"]:
-            min.limits[par] = configModello["limiti"][par]
-        if "fissati" in configModello and par in configModello["fissati"]:
-            min.fixed[par] = configModello["fissati"][par]
+    if not '-nofit' in sys.argv:
+        #imposto la cost function per il modello
+        Q2modello = PropagatoreX(datiX, datiY, errX, errY, moduloModello.modello, moduloModello.derivata_modello)
+        #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
+        min = Minuit(Q2modello, **configModello["iniziali"], name=list(configModello["iniziali"].keys()))
 
-    min.migrad()
-    min.hesse()
+        if not "limiti" in configModello:
+            print("\033[33m'limiti' non presente nel dizionario di configurazione, nessun limite verrà impostato sui parametri\033[0m")
 
-    #grafico del modello interpolato
-    xAxis = np.linspace(np.min(datiX), np.max(datiX), 1000)
-    yAxis = moduloModello.modello(xAxis, *min.values)
+        #utilizzo la configurazione nel modello
+        for par in configModello["iniziali"]:
+            if "limiti" in configModello and par in configModello["limiti"]:
+                min.limits[par] = configModello["limiti"][par]
+            if "fissati" in configModello and par in configModello["fissati"]:
+                min.fixed[par] = configModello["fissati"][par]
 
-    ndof = len(datiX) - min.nfit
+        min.migrad()
+        min.hesse()
 
-    #plot + label contenente risultati di fit
-    ax.plot(
-        xAxis, 
-        yAxis, 
-        label=descModello['equazione']+ "\n" +
-            '\n'.join(fr"{descModello['nomi'][param]}: {min.values[param]: .3f} $\pm$ {min.errors[param]: .3f} {descModello['misure'][param]}" for param in configModello["iniziali"]) +
-            "\n" + fr"$\chi^2/$ndof: {min.fval / ndof: .3f}" + "\n" + fr"p-value: {stats.chi2.sf(min.fval, ndof): .3f}",
-        color='blue'
-    )
+        ndof = len(datiX) - min.nfit
 
-    ax.legend()
+        if 'equazione' in descModello:
+            equazione = f"{descModello['equazione']}\n"
+        else:
+            print("\033[33m'equazione' non presente nel dizionario di descrizione, nessuna equazione verrà mostrata a schermo\033[0m")
+            equazione = ""
+        
+        #grafico del modello interpolato
+        xAxis = np.linspace(np.min(datiX), np.max(datiX), 1000)
+        yAxis = moduloModello.modello(xAxis, *min.values)
+
+        if datiComplessi:
+            ax.plot(
+                xAxis, 
+                yAxis.real, 
+                label= equazione +
+                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])} {misure[param] if param in misure else ""}" for param in configModello["iniziali"]) +
+                    "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
+                color='blue'
+            )
+            ax.plot(
+                xAxis, 
+                yAxis.imag, 
+                linestyle='--',
+                color='blue'
+            )
+        else:
+            #plot + label contenente risultati di fit
+            ax.plot(
+                xAxis, 
+                yAxis, 
+                label= equazione +
+                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])} {misure[param] if param in misure else ""}" for param in configModello["iniziali"]) +
+                    "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
+                color='blue'
+            )
+
+        ax.legend()
 
     plt.show()
 
