@@ -199,8 +199,17 @@ if __name__ == "__main__":
             print("\033[33m'equazione' non presente nel dizionario di descrizione, nessuna equazione verrà mostrata a schermo\033[0m")
             equazione = ""
         
+        xMin = np.min(datiX)
+        xMax = np.max(datiX)
+
         #grafico del modello interpolato
-        xAxis = np.linspace(np.min(datiX), np.max(datiX), 1000)
+        if not 'scala_x' in descModello or descModello['scala_x'] == 'linear':
+            xAxis = np.linspace(xMin, xMax, 1000)
+        elif descModello['scala_x'] == 'log':
+            xAxis = np.logspace(np.log10(xMin), np.log10(xMax), 1000)
+        #da aggiungere altri possibilmente
+
+
         yAxis = moduloModello.modello(xAxis, *min.values)
 
         if datiComplessi:
