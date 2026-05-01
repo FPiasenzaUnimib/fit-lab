@@ -30,7 +30,7 @@ class PropagatoreX:
 
         errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
         #print(fx.shape)
-        return np.sum(np.abs((self.y - fx))** 2 / errore) 
+        return np.sum(np.abs(self.y - fx)** 2 / errore) 
 
 #per non avere eX quando non serve
 def fmts(x):
