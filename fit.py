@@ -181,12 +181,17 @@ if __name__ == "__main__":
         if not "limiti" in configModello:
             print("\033[33m'limiti' non presente nel dizionario di configurazione, nessun limite verrà impostato sui parametri\033[0m")
 
+        if "fissati" in configModello:
+            paramFissati = configModello["fissati"]
+        else:
+            paramFissati = {}
+
         #utilizzo la configurazione nel modello
         for par in configModello["iniziali"]:
             if "limiti" in configModello and par in configModello["limiti"]:
                 min.limits[par] = configModello["limiti"][par]
-            if "fissati" in configModello and par in configModello["fissati"]:
-                min.fixed[par] = configModello["fissati"][par]
+            if par in paramFissati:
+                min.fixed[par] = paramFissati[par]
 
         min.migrad()
         min.hesse()
@@ -217,7 +222,7 @@ if __name__ == "__main__":
                 xAxis, 
                 yAxis.real, 
                 label= equazione +
-                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])} {misure[param] if param in misure else ""}" for param in configModello["iniziali"]) +
+                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
                     "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
                 color='blue'
             )
@@ -233,7 +238,7 @@ if __name__ == "__main__":
                 xAxis, 
                 yAxis, 
                 label= equazione +
-                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])} {misure[param] if param in misure else ""}" for param in configModello["iniziali"]) +
+                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
                     "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
                 color='blue'
             )
