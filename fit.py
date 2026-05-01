@@ -204,6 +204,11 @@ if __name__ == "__main__":
             print("\033[33m'equazione' non presente nel dizionario di descrizione, nessuna equazione verrà mostrata a schermo\033[0m")
             equazione = ""
         
+        #formatting la label
+        label = (equazione +
+            '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
+            "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}")
+
         xMin = np.min(datiX)
         xMax = np.max(datiX)
 
@@ -221,9 +226,7 @@ if __name__ == "__main__":
             ax.plot(
                 xAxis, 
                 yAxis.real, 
-                label= equazione +
-                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
-                    "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
+                label=label,
                 color='blue'
             )
             ax.plot(
@@ -237,9 +240,7 @@ if __name__ == "__main__":
             ax.plot(
                 xAxis, 
                 yAxis, 
-                label= equazione +
-                    '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
-                    "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}",
+                label=label,
                 color='blue'
             )
 
