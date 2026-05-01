@@ -1,4 +1,5 @@
-## fit
+## Fit
+![Copertina](immagini/H_R.png)
 ### Utilizzo
 Lo script viene invocato da riga di comando, e ammette 2 parametri:
 ```sh
