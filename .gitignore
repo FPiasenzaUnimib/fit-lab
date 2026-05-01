@@ -1,2 +1,3 @@
 *.txt
+mod*.py
 __pycache__
