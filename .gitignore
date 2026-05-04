@@ -1,3 +1,4 @@
 *.txt
 mod*.py
+archivio/*
 __pycache__
