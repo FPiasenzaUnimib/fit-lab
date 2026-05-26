@@ -28,11 +28,11 @@ class PropagatoreX:
         fx = self.modello(self.x, *params)
         dfdx = self.derivata(self.x, *params)
 
-        sq2 = (np.real(self.y - fx)**2)/(np.real(self.errY)**2) + (np.imag(self.y - fx)**2)/(np.imag(self.errY)**2)
-        #errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
+        #sq2 = (np.real(self.y - fx)**2)/(np.real(self.errY)**2) + (np.imag(self.y - fx)**2)/(np.imag(self.errY)**2)
+        errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
         #print(fx.shape)
-        return np.sum(sq2)
-        #return np.sum(np.abs(self.y - fx)** 2 / errore) 
+        #return np.sum(sq2)
+        return np.sum(np.abs(self.y - fx)** 2 / errore) 
 
 #per non avere eX quando non serve
 def fmts(x):
@@ -68,6 +68,8 @@ if __name__ == "__main__":
     else:
         nomeFileDati = sys.argv[1]
         nomeModello = sys.argv[2]
+
+    del paramExtra
 
     try:
         if rappFase:
@@ -131,7 +133,11 @@ if __name__ == "__main__":
         exit(1)
 
     if 'nomi' in descModello:
-        nomi = descModello['nomi']
+        nomi = { n: descModello['nomi'][n] if n in descModello['nomi'] else n for n in configModello['iniziali']}
+        if 'asse_x' in descModello['nomi']:
+            nomi.update({'asse_x' : descModello['nomi']['asse_x']})
+        if 'asse_y' in descModello['nomi']:
+            nomi.update({'asse_y' : descModello['nomi']['asse_y']})
     else:
         print("\033[33m'nomi' non presente nel dizionario di descrizione, utilizzo nomi di default\033[0m")
         nomi = { n: n for n in configModello['iniziali']}
