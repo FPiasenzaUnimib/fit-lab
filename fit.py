@@ -134,6 +134,10 @@ if __name__ == "__main__":
 
     if 'nomi' in descModello:
         nomi = { n: descModello['nomi'][n] if n in descModello['nomi'] else n for n in configModello['iniziali']}
+        for n in configModello['iniziali']:
+            if n not in descModello['nomi']:
+                print(f"\033[33mParametro '{n}' non presente nel dizionario nomi, utilizzato format di default\033[0m")
+        
         if 'asse_x' in descModello['nomi']:
             nomi.update({'asse_x' : descModello['nomi']['asse_x']})
         if 'asse_y' in descModello['nomi']:
@@ -186,7 +190,10 @@ if __name__ == "__main__":
         #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
         min = Minuit(Q2modello, **configModello["iniziali"], name=list(configModello["iniziali"].keys()))
 
-        if not "limiti" in configModello:
+        if "limiti" in configModello:
+            limiti = configModello["limiti"]
+        else:
+            limiti = {}
             print("\033[33m'limiti' non presente nel dizionario di configurazione, nessun limite verrà impostato sui parametri\033[0m")
 
         if "fissati" in configModello:
@@ -196,8 +203,8 @@ if __name__ == "__main__":
 
         #utilizzo la configurazione nel modello
         for par in configModello["iniziali"]:
-            if "limiti" in configModello and par in configModello["limiti"]:
-                min.limits[par] = configModello["limiti"][par]
+            if par in limiti:
+                min.limits[par] = limiti[par]
             if par in paramFissati:
                 min.fixed[par] = paramFissati[par]
 
@@ -249,7 +256,7 @@ if __name__ == "__main__":
                 xAxis, 
                 yAxis, 
                 label=label,
-                color='blue'
+                color='green'
             )
 
         ax.legend()
