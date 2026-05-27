@@ -177,6 +177,20 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
         min.migrad()
         min.hesse()
 
+        #check di validita' fit con report
+        #errore dovuto a pylance
+        if min.fmin.is_valid:
+            print("\033[32mIl fit risulta valido.\033[0m")
+        else:
+            print("\033[31mIl fit non risulta valido.\033[0m")
+
+        print("Valori:")
+        print('\n'.join(f"{param} = {min.values[param]} ± {min.errors[param]}" for param in min.parameters))
+        print("Covarianza: ")
+        print(min.covariance)
+        #print(min.errors)
+        #print(min.fmin)
+
         ndof = len(datiX) - min.nfit
 
         if 'equazione' in descModello:
@@ -185,6 +199,7 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
             print("\033[33m'equazione' non presente nel dizionario di descrizione, nessuna equazione verrà mostrata a schermo\033[0m")
             equazione = ""
         
+
         #formatting la label
         label = (equazione +
             '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
