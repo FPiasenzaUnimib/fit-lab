@@ -28,47 +28,18 @@ class PropagatoreX:
         fx = self.modello(self.x, *params)
         dfdx = self.derivata(self.x, *params)
 
-        sq2 = (np.real(self.y - fx)**2)/(np.real(self.errY)**2) + (np.imag(self.y - fx)**2)/(np.imag(self.errY)**2)
-        #errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
+        #sq2 = (np.real(self.y - fx)**2)/(np.real(self.errY)**2) + (np.imag(self.y - fx)**2)/(np.imag(self.errY)**2)
+        errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
         #print(fx.shape)
-        return np.sum(sq2)
-        #return np.sum(np.abs(self.y - fx)** 2 / errore) 
+        #return np.sum(sq2)
+        return np.sum(np.abs(self.y - fx)** 2 / errore) 
 
 #per non avere eX quando non serve
 def fmts(x):
     fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
     return f"{x:{fmt}}"
 
-if __name__ == "__main__":
-    #print(f"{len(sys.argv)}")
-
-    paramExtra = 0 
-    if '-nofit' in sys.argv:
-        paramExtra += 1
-        eseguiFit = False 
-    else:
-        eseguiFit = True
-    
-    if '-fase' in sys.argv:
-        paramExtra += 1
-        rappFase = True
-    else: 
-        rappFase = False
-
-    if '-comp' in sys.argv:
-        paramExtra += 1
-        compForzato = True
-    else:
-        compForzato = False
-
-    # se troppo pochi parametri allora quit
-    if len(sys.argv) < 3 + paramExtra:
-        nomeFileDati = input("\033[30mInserisci il nome del file dati: \033[0m")
-        nomeModello = input("\033[30mInserisci il nome del modulo contente i dati del modello: \033[0m")
-    else:
-        nomeFileDati = sys.argv[1]
-        nomeModello = sys.argv[2]
-
+def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False):
     try:
         if rappFase:
             datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
@@ -77,12 +48,9 @@ if __name__ == "__main__":
             del ampiezza, fase, errAmpiezza, errFase
         else:
             datiX, datiY, errX, errY = np.loadtxt(nomeFileDati, dtype=np.complex128).T
-    
     except Exception as err:
         print(f"\033[31mIl caricamento del file dati è fallito:\n\tnumpy: {err}\033[0m")
         exit(1)
-
-
     #scarto rappresentazione complessa 
     #copio per liberare memoria inutile
     datiX = datiX.real.copy()
@@ -131,10 +99,18 @@ if __name__ == "__main__":
         exit(1)
 
     if 'nomi' in descModello:
-        nomi = descModello['nomi']
+        nomi = { n: descModello['nomi'][n] if n in descModello['nomi'] else n for n in configModello['iniziali']}
+        for n in configModello['iniziali']:
+            if n not in descModello['nomi']:
+                print(f"\033[33mParametro '{n}' non presente nel dizionario nomi, utilizzato format di default\033[0m")
+        
+        if 'asse_x' in descModello['nomi']:
+            nomi.update({'asse_x' : descModello['nomi']['asse_x']})
+        if 'asse_y' in descModello['nomi']:
+            nomi.update({'asse_y' : descModello['nomi']['asse_y']})
     else:
         print("\033[33m'nomi' non presente nel dizionario di descrizione, utilizzo nomi di default\033[0m")
-        nomi = { n: n for n in configModello['iniziali']}
+        nomi = { n: n for n in configModello['iniziali'] }
 
     if 'misure' in descModello:
         misure = descModello['misure']
@@ -180,7 +156,10 @@ if __name__ == "__main__":
         #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
         min = Minuit(Q2modello, **configModello["iniziali"], name=list(configModello["iniziali"].keys()))
 
-        if not "limiti" in configModello:
+        if "limiti" in configModello:
+            limiti = configModello["limiti"]
+        else:
+            limiti = {}
             print("\033[33m'limiti' non presente nel dizionario di configurazione, nessun limite verrà impostato sui parametri\033[0m")
 
         if "fissati" in configModello:
@@ -190,8 +169,8 @@ if __name__ == "__main__":
 
         #utilizzo la configurazione nel modello
         for par in configModello["iniziali"]:
-            if "limiti" in configModello and par in configModello["limiti"]:
-                min.limits[par] = configModello["limiti"][par]
+            if par in limiti:
+                min.limits[par] = limiti[par]
             if par in paramFissati:
                 min.fixed[par] = paramFissati[par]
 
@@ -243,12 +222,52 @@ if __name__ == "__main__":
                 xAxis, 
                 yAxis, 
                 label=label,
-                color='blue'
+                color='green'
             )
 
         ax.legend()
 
     plt.show()
+
+if __name__ == "__main__":
+    #print(f"{len(sys.argv)}")
+
+    paramExtra = 0 
+    if '-nofit' in sys.argv:
+        paramExtra += 1
+        eseguiFit = False 
+    else:
+        eseguiFit = True
+    
+    if '-fase' in sys.argv:
+        paramExtra += 1
+        rappFase = True
+    else: 
+        rappFase = False
+
+    if '-comp' in sys.argv:
+        paramExtra += 1
+        compForzato = True
+    else:
+        compForzato = False
+
+    # se troppo pochi parametri allora quit
+    if len(sys.argv) < 3 + paramExtra:
+        nomeFileDati = input("\033[30mInserisci il nome del file dati: \033[0m")
+        nomeModello = input("\033[30mInserisci il nome del modulo contente i dati del modello: \033[0m")
+    else:
+        nomeFileDati = sys.argv[1]
+        nomeModello = sys.argv[2]
+
+    del paramExtra
+
+    fit(nomeFileDati, nomeModello, eseguiFit=eseguiFit, rappFase=rappFase, compForzato=compForzato)
+    
+    
+    
+
+
+    
 
     
 
