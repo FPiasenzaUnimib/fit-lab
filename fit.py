@@ -188,7 +188,7 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
         #formatting la label
         label = (equazione +
             '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
-            "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof)}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof))}")
+            "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof) if min.fval != None else "None"}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof)) if min.fval != None else "None"}")
 
         xMin = np.min(datiX)
         xMax = np.max(datiX)
