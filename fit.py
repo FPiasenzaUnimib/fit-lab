@@ -62,10 +62,10 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
         #copio in ogni caso per liberare la memoria dal file completo
         datiY = datiY.copy()
         errY = errY.copy()
-        print("\033[36mI valori della funzione sono complessi\033[0m")
+        print("\033[36mI valori della funzione sono complessi\033[0m\n")
     else:
         datiComplessi = False
-        print("\033[36mI valori della funzione sono reali\033[0m")
+        print("\033[36mI valori della funzione sono reali\033[0m\n")
         datiY = datiY.real.copy()
         errY = errY.real.copy()
 
@@ -180,16 +180,10 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
         #check di validita' fit con report
         #errore dovuto a pylance
         if min.fmin.is_valid:
-            print("\033[32mIl fit risulta valido.\033[0m")
+            print("\n\033[32mIl fit risulta valido\033[0m")
         else:
-            print("\033[31mIl fit non risulta valido.\033[0m")
+            print("\n\033[31mIl fit non risulta valido\033[0m")
 
-        print("Valori:")
-        print('\n'.join(f"{param} = {min.values[param]} ± {min.errors[param]}" for param in min.parameters))
-        print("Covarianza: ")
-        print(min.covariance)
-        #print(min.errors)
-        #print(min.fmin)
 
         ndof = len(datiX) - min.nfit
 
@@ -199,11 +193,22 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
             print("\033[33m'equazione' non presente nel dizionario di descrizione, nessuna equazione verrà mostrata a schermo\033[0m")
             equazione = ""
         
+        if min.fval != None:
+            chi2_r = min.fval / ndof
+            pvalue = stats.chi2.sf(min.fval, ndof)
+        else: 
+            chi2_r = pvalue = float('nan')
+
+        print("\nValori:")
+        print('\n'.join(f"{param} = {min.values[param]} ± {min.errors[param]}" for param in min.parameters))
+        print("Covarianza: ")
+        print(min.covariance)
+        print(f"Chi2/ndof: {fmts(chi2_r)}, p-value: {fmts(pvalue)}\n")
 
         #formatting la label
         label = (equazione +
             '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
-            "\n" + fr"$\chi^2/$ndof: {fmts(min.fval / ndof) if min.fval != None else "None"}" + "\n" + fr"p-value: {fmts(stats.chi2.sf(min.fval, ndof)) if min.fval != None else "None"}")
+            "\n" + fr"$\chi^2/$ndof: {fmts(chi2_r)}" + "\n" + fr"p-value: {fmts(pvalue)}")
 
         xMin = np.min(datiX)
         xMax = np.max(datiX)
