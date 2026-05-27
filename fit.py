@@ -39,38 +39,7 @@ def fmts(x):
     fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
     return f"{x:{fmt}}"
 
-if __name__ == "__main__":
-    #print(f"{len(sys.argv)}")
-
-    paramExtra = 0 
-    if '-nofit' in sys.argv:
-        paramExtra += 1
-        eseguiFit = False 
-    else:
-        eseguiFit = True
-    
-    if '-fase' in sys.argv:
-        paramExtra += 1
-        rappFase = True
-    else: 
-        rappFase = False
-
-    if '-comp' in sys.argv:
-        paramExtra += 1
-        compForzato = True
-    else:
-        compForzato = False
-
-    # se troppo pochi parametri allora quit
-    if len(sys.argv) < 3 + paramExtra:
-        nomeFileDati = input("\033[30mInserisci il nome del file dati: \033[0m")
-        nomeModello = input("\033[30mInserisci il nome del modulo contente i dati del modello: \033[0m")
-    else:
-        nomeFileDati = sys.argv[1]
-        nomeModello = sys.argv[2]
-
-    del paramExtra
-
+def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False):
     try:
         if rappFase:
             datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
@@ -79,12 +48,9 @@ if __name__ == "__main__":
             del ampiezza, fase, errAmpiezza, errFase
         else:
             datiX, datiY, errX, errY = np.loadtxt(nomeFileDati, dtype=np.complex128).T
-    
     except Exception as err:
         print(f"\033[31mIl caricamento del file dati è fallito:\n\tnumpy: {err}\033[0m")
         exit(1)
-
-
     #scarto rappresentazione complessa 
     #copio per liberare memoria inutile
     datiX = datiX.real.copy()
@@ -144,7 +110,7 @@ if __name__ == "__main__":
             nomi.update({'asse_y' : descModello['nomi']['asse_y']})
     else:
         print("\033[33m'nomi' non presente nel dizionario di descrizione, utilizzo nomi di default\033[0m")
-        nomi = { n: n for n in configModello['iniziali']}
+        nomi = { n: n for n in configModello['iniziali'] }
 
     if 'misure' in descModello:
         misure = descModello['misure']
@@ -262,6 +228,46 @@ if __name__ == "__main__":
         ax.legend()
 
     plt.show()
+
+if __name__ == "__main__":
+    #print(f"{len(sys.argv)}")
+
+    paramExtra = 0 
+    if '-nofit' in sys.argv:
+        paramExtra += 1
+        eseguiFit = False 
+    else:
+        eseguiFit = True
+    
+    if '-fase' in sys.argv:
+        paramExtra += 1
+        rappFase = True
+    else: 
+        rappFase = False
+
+    if '-comp' in sys.argv:
+        paramExtra += 1
+        compForzato = True
+    else:
+        compForzato = False
+
+    # se troppo pochi parametri allora quit
+    if len(sys.argv) < 3 + paramExtra:
+        nomeFileDati = input("\033[30mInserisci il nome del file dati: \033[0m")
+        nomeModello = input("\033[30mInserisci il nome del modulo contente i dati del modello: \033[0m")
+    else:
+        nomeFileDati = sys.argv[1]
+        nomeModello = sys.argv[2]
+
+    del paramExtra
+
+    fit(nomeFileDati, nomeModello, eseguiFit=eseguiFit, rappFase=rappFase, compForzato=compForzato)
+    
+    
+    
+
+
+    
 
     
 
