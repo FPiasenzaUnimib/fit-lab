@@ -28,11 +28,14 @@ class PropagatoreX:
         fx = self.modello(self.x, *params)
         dfdx = self.derivata(self.x, *params)
 
-        #sq2 = (np.real(self.y - fx)**2)/(np.real(self.errY)**2) + (np.imag(self.y - fx)**2)/(np.imag(self.errY)**2)
-        errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
+        diff = self.y - fx
+        sq2 = (
+            (diff.real**2)/(self.errY.real**2 + (dfdx.real*self.errX)**2) + (0 if not np.any(self.errY.imag) else (diff.imag**2)/(self.errY.imag**2 + (dfdx.imag * self.errX)**2)) 
+        )
+        #errore = np.abs(self.errY) ** 2 + np.abs((dfdx * self.errX)) ** 2
         #print(fx.shape)
-        #return np.sum(sq2)
-        return np.sum(np.abs(self.y - fx)** 2 / errore) 
+        return np.sum(sq2)
+        #return np.sum(np.abs(self.y - fx)** 2 / errore) 
 
 #per non avere eX quando non serve
 def fmts(x):
@@ -177,7 +180,7 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
         min.migrad()
         min.hesse()
 
-        #check di validita' fit con report
+        #check di validita' fit con report (da fare)
         #errore dovuto a pylance
         if min.fmin.is_valid:
             print("\n\033[32mIl fit risulta valido\033[0m")
@@ -207,7 +210,7 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
 
         #formatting la label
         label = (equazione +
-            '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
+            '\n'.join(fr"{nomi[param]}: ${fmts(min.values[param])} \pm {fmts(min.errors[param])}${fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
             "\n" + fr"$\chi^2/$ndof: {fmts(chi2_r)}" + "\n" + fr"p-value: {fmts(pvalue)}")
 
         xMin = np.min(datiX)
