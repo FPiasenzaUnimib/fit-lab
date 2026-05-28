@@ -27,7 +27,7 @@ class PropagatoreX:
     
     def __call__(self, *params) -> float:
         fx = self.modello(self.x, *params)
-        dfdx = self.derivata(self.x, *params) if self.derivata != None else np.zeros_like(fx)
+        dfdx = self.derivata(self.x, *params) if self.derivata != None else 0
 
         diff = self.y - fx
         sq2 = (
@@ -77,48 +77,49 @@ def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFa
     #moduloModello = None
     try:
         moduloModello = importlib.import_module(nomeModello)
-
-        if not hasattr(moduloModello, "modello"):
-            raise Exception("Il modulo non contiene il modello")
-        if not hasattr(moduloModello, "derivata_modello"):
-            raise Exception("Il modulo non contiene la derivata del modello, necessaria per il calcolo dell'errore")
-        if not hasattr(moduloModello, "configurazione"):
-            raise Exception("Il modulo non contiene un dizionario di configurazione")
-        if not hasattr(moduloModello, "descrizione"):
-            raise Exception("Il modulo non contiene un dizionario di descrizione")
-        
     except Exception as err:
-        raise Exception(f"\033[31mL'importazione del modulo contentente il modello è fallita: \n\t{err}\033[0m")
+        raise Exception(f"\033[31mL'importazione del modulo contentente il modello è fallita: \n\timportlib: {err}\033[0m")
 
-    #per facilita di utilizzo
-    configModello = moduloModello.configurazione
-    descModello = moduloModello.descrizione
+    if hasattr(moduloModello, 'descrizione'):
+        descModello = moduloModello.descrizione
+    else:
+        descModello = {}
+        print("\033[33mIl modulo non contiene un dizionario di descrizione, utilizzata descrizione standard\033[0m")
+
+
+    if not hasattr(moduloModello, "modello"):        
+        print("\033[33mIl modulo non contiene il modello, nessun fit eseguito\033[0m")
+        eseguiFit = False
+
+    if not hasattr(moduloModello, "configurazione") or not 'iniziali' in moduloModello.configurazione:
+        print("\033[33mIl modulo non contiene un dizionario di configurazione, o questo non contiene valori iniziali per i parametri, nessun fit eseguito\033[0m")
+        eseguiFit = False
+
+    if np.any(errY.real == 0) or (datiComplessi and np.any(errY.imag == 0)):
+        print('\n\033[31mErrori nulli rilevati, nessun fit eseguito\033[0m')
+        eseguiFit = False
+
 
     fig, ax = plt.subplots(1,1)
-
-    if not 'iniziali' in configModello:
-        print("\033[31m'iniziali' non presente nel dizionario di configurazione\033[0m", file=sys.stderr)
-        exit(1)
-
-    if 'nomi' in descModello:
-        nomi = { n: descModello['nomi'][n] if n in descModello['nomi'] else n for n in configModello['iniziali']}
-        for n in configModello['iniziali']:
-            if n not in descModello['nomi']:
-                print(f"\033[33mParametro '{n}' non presente nel dizionario nomi, utilizzato format di default\033[0m")
-        
-        if 'asse_x' in descModello['nomi']:
-            nomi.update({'asse_x' : descModello['nomi']['asse_x']})
-        if 'asse_y' in descModello['nomi']:
-            nomi.update({'asse_y' : descModello['nomi']['asse_y']})
-    else:
-        print("\033[33m'nomi' non presente nel dizionario di descrizione, utilizzo nomi di default\033[0m")
-        nomi = { n: n for n in configModello['iniziali'] }
 
     if 'misure' in descModello:
         misure = descModello['misure']
     else: 
         print("\033[33m'misure' non presente nel dizionario di descrizione, nessuna unità di misura verrà mostrata\033[0m")
         misure = {}
+    
+    if 'nomi' in descModello:
+        if 'asse_x' in descModello['nomi']:
+            ax.set_xlabel(descModello['nomi']['asse_x'] + (fr" ({misure['asse_x']})" if 'asse_x' in misure else ""))
+        else:
+            print("\033[33m'asse_x' non presente nel dizionario 'nomi', utilizzo label asse x default\033[0m")
+            ax.set_xlabel("x" + (fr" ({misure['asse_x']})" if 'asse_x' in misure else ""))
+
+        if 'asse_y' in descModello['nomi']:
+            ax.set_ylabel(descModello['nomi']['asse_y'] + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
+        else:
+            print("\033[33m'asse_y' non presente nel dizionario 'nomi', utilizzo label asse y default\033[0m")
+            ax.set_ylabel("y" + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
 
     if 'scala_x' in descModello:
         ax.set_xscale(descModello['scala_x'])
@@ -132,33 +133,40 @@ def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFa
     else:
         ax.errorbar(datiX, datiY, errY, errX, fmt='o', ecolor="red", capsize=5.0, markerfacecolor='black', markeredgecolor='red')
    
-
     #imposto titolo e label
     if 'titolo' in descModello:
         ax.set_title(descModello['titolo'])
     else:
         print("\033[33m'titolo' non presente nel dizionario di descrizione, nessun titolo verrà mostrato a schermo\033[0m")
-    
-    if 'asse_x' in nomi:
-        ax.set_xlabel(nomi['asse_x'] + (fr" ({misure['asse_x']})" if 'asse_x' in misure else ""))
-    else:
-        print("\033[33m'asse_x' non presente nel dizionario 'nomi', utilizzo label asse x default\033[0m")
-        ax.set_xlabel("x" + (fr" ({misure['asse_x']})" if 'asse_x' in misure else ""))
-
-    if 'asse_y' in nomi:
-        ax.set_ylabel(nomi['asse_y'] + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
-    else:
-        print("\033[33m'asse_y' non presente nel dizionario 'nomi', utilizzo label asse y default\033[0m")
-        ax.set_ylabel("y" + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
-
-
-    if np.any(errY.real == 0) or (datiComplessi and np.any(errY.imag == 0)):
-        print('\n\033[31mErrori nulli rilevati, nessun fit eseguito\033[0m')
-        eseguiFit = False
 
     if eseguiFit:
+        
+        if hasattr(moduloModello, "derivata_modello"):
+            derivataModello = moduloModello.derivata_modello
+        else:
+            derivataModello = None
+            print("\033[33m'derivata_modello' non presente nel modulo, non sarà effettuata propagazione dell'errore in x\033[0m")
+        
+            
+        #per facilita di utilizzo
+        configModello = moduloModello.configurazione
+
+        if 'nomi' in descModello:
+            nomi = { n: descModello['nomi'][n] if n in descModello['nomi'] else n for n in configModello['iniziali']}
+            for n in configModello['iniziali']:
+                if n not in descModello['nomi']:
+                    print(f"\033[33mParametro '{n}' non presente nel dizionario nomi, utilizzato format di default\033[0m")
+            
+            if 'asse_x' in descModello['nomi']:
+                nomi.update({'asse_x' : descModello['nomi']['asse_x']})
+            if 'asse_y' in descModello['nomi']:
+                nomi.update({'asse_y' : descModello['nomi']['asse_y']})
+        else:
+            print("\033[33m'nomi' non presente nel dizionario di descrizione, utilizzo nomi di default\033[0m")
+            nomi = { n: n for n in configModello['iniziali'] }
+
         #imposto la cost function per il modello
-        Q2modello = PropagatoreX(datiX, datiY, errX, errY, moduloModello.modello, moduloModello.derivata_modello)
+        Q2modello = PropagatoreX(datiX, datiY, errX, errY, moduloModello.modello, derivataModello)
         #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
         min = Minuit(Q2modello, **configModello["iniziali"], name=list(configModello["iniziali"].keys()))
 
