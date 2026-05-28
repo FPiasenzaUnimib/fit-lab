@@ -5,7 +5,7 @@ fit.py
 """
 #il codice fa schifo di per se ma funziona
 
-from typing import Callable
+from typing import Callable, NoReturn
 import numpy as np
 import matplotlib.pyplot as plt
 from iminuit import Minuit
@@ -43,7 +43,7 @@ def fmts(x : float) -> str:
     fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
     return f"{x:{fmt}}"
 
-def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False):
+def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False) -> None | NoReturn:
     try:
         if rappFase:
             datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
