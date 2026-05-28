@@ -5,6 +5,7 @@ fit.py
 """
 #il codice fa schifo di per se ma funziona
 
+from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
 from iminuit import Minuit
@@ -16,7 +17,7 @@ import sys
 
 # Equivalente di LeastSquares ma con propagazione su errore in X
 class PropagatoreX:
-    def __init__(self, x, y, errX, errY, modello, derivata_modello):
+    def __init__(self, x : np.ndarray, y : np.ndarray, errX : np.ndarray, errY : np.ndarray, modello : Callable, derivata_modello : Callable | None):
         self.x = x
         self.y = y
         self.errX = errX
@@ -24,9 +25,9 @@ class PropagatoreX:
         self.modello = modello
         self.derivata = derivata_modello
     
-    def __call__(self, *params):
+    def __call__(self, *params) -> float:
         fx = self.modello(self.x, *params)
-        dfdx = self.derivata(self.x, *params)
+        dfdx = self.derivata(self.x, *params) if self.derivata != None else np.zeros_like(fx)
 
         diff = self.y - fx
         sq2 = (
@@ -38,11 +39,11 @@ class PropagatoreX:
         #return np.sum(np.abs(self.y - fx)** 2 / errore) 
 
 #per non avere eX quando non serve
-def fmts(x):
+def fmts(x : float) -> str:
     fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
     return f"{x:{fmt}}"
 
-def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False):
+def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False):
     try:
         if rappFase:
             datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
