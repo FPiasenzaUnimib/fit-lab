@@ -153,11 +153,16 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
         ax.set_ylabel("y" + (fr" ({misure['asse_y']})" if 'asse_y' in misure else ""))
 
 
+    if np.any(errY.real == 0) or (datiComplessi and np.any(errY.imag == 0)):
+        print('\n\033[31mErrori nulli rilevati, nessun fit eseguito\033[0m')
+        eseguiFit = False
+
     if eseguiFit:
         #imposto la cost function per il modello
         Q2modello = PropagatoreX(datiX, datiY, errX, errY, moduloModello.modello, moduloModello.derivata_modello)
         #lstqModello = LeastSquares(datiX, datiY, errY, moduloModello.modello)
         min = Minuit(Q2modello, **configModello["iniziali"], name=list(configModello["iniziali"].keys()))
+
 
         if "limiti" in configModello:
             limiti = configModello["limiti"]
@@ -210,7 +215,7 @@ def fit(nomeFileDati, nomeModello, *, eseguiFit: bool = True, rappFase: bool = F
 
         #formatting la label
         label = (equazione +
-            '\n'.join(fr"{nomi[param]}: ${fmts(min.values[param])} \pm {fmts(min.errors[param])}${fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
+            '\n'.join(fr"{nomi[param]}: {fmts(min.values[param])} $\pm$ {fmts(min.errors[param])}{fr" {misure[param]}" if param in misure else ""}" for param in configModello["iniziali"] if not paramFissati.get(param, False)) +
             "\n" + fr"$\chi^2/$ndof: {fmts(chi2_r)}" + "\n" + fr"p-value: {fmts(pvalue)}")
 
         xMin = np.min(datiX)
