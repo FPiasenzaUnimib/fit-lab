@@ -53,8 +53,7 @@ def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFa
         else:
             datiX, datiY, errX, errY = np.loadtxt(nomeFileDati, dtype=np.complex128).T
     except Exception as err:
-        print(f"\033[31mIl caricamento del file dati è fallito:\n\tnumpy: {err}\033[0m")
-        exit(1)
+        raise Exception(f"\033[31mIl caricamento del file dati è fallito:\n\tnumpy: {err}\033[0m")
     #scarto rappresentazione complessa 
     #copio per liberare memoria inutile
     datiX = datiX.real.copy()
@@ -80,17 +79,16 @@ def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFa
         moduloModello = importlib.import_module(nomeModello)
 
         if not hasattr(moduloModello, "modello"):
-            raise ImportError("Il modulo non contiene il modello")
+            raise Exception("Il modulo non contiene il modello")
         if not hasattr(moduloModello, "derivata_modello"):
-            raise ImportError("Il modulo non contiene la derivata del modello, necessaria per il calcolo dell'errore")
+            raise Exception("Il modulo non contiene la derivata del modello, necessaria per il calcolo dell'errore")
         if not hasattr(moduloModello, "configurazione"):
-            raise ImportError("Il modulo non contiene un dizionario di configurazione")
+            raise Exception("Il modulo non contiene un dizionario di configurazione")
         if not hasattr(moduloModello, "descrizione"):
-            raise ImportError("Il modulo non contiene un dizionario di descrizione")
+            raise Exception("Il modulo non contiene un dizionario di descrizione")
         
-    except ImportError as err:
-        print(f"\033[31mL'importazione del modulo contentente il modello è fallita: \n\t{err}\033[0m", file=sys.stderr)
-        exit(1)
+    except Exception as err:
+        raise Exception(f"\033[31mL'importazione del modulo contentente il modello è fallita: \n\t{err}\033[0m")
 
     #per facilita di utilizzo
     configModello = moduloModello.configurazione
@@ -290,7 +288,11 @@ if __name__ == "__main__":
 
     del paramExtra
 
-    fit(nomeFileDati, nomeModello, eseguiFit=eseguiFit, rappFase=rappFase, compForzato=compForzato)
+    try:
+        fit(nomeFileDati, nomeModello, eseguiFit=eseguiFit, rappFase=rappFase, compForzato=compForzato)
+    except Exception as err:
+        print(err, file=sys.stderr)
+        exit(1)
     
     
     
