@@ -60,7 +60,7 @@ def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFa
     errX = errX.real.copy()
 
 
-    if rappFase or compForzato or datiY.imag.any():
+    if compForzato or datiY.imag.any():
         datiComplessi = True
         #copio in ogni caso per liberare la memoria dal file completo
         datiY = datiY.copy()
