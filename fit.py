@@ -12,7 +12,7 @@ from iminuit import Minuit
 import importlib
 #from iminuit.cost import LeastSquares
 from scipy import stats
-
+from fmts import fmts
 import sys
 
 # Equivalente di LeastSquares ma con propagazione su errore in X
@@ -38,10 +38,7 @@ class PropagatoreX:
         return np.sum(sq2)
         #return np.sum(np.abs(self.y - fx)** 2 / errore) 
 
-#per non avere eX quando non serve
-def fmts(x : float) -> str:
-    fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
-    return f"{x:{fmt}}"
+
 
 def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False) :
     try:
