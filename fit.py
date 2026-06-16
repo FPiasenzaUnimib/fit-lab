@@ -43,7 +43,7 @@ def fmts(x : float) -> str:
     fmt = ".3e" if abs(x) < 0.1 and x != 0 else ".3f"
     return f"{x:{fmt}}"
 
-def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False) -> None | NoReturn:
+def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFase: bool = False, compForzato: bool = False) :
     try:
         if rappFase:
             datiX, ampiezza, fase, errX, errAmpiezza, errFase = np.loadtxt(nomeFileDati, dtype=np.float64).T
@@ -263,6 +263,7 @@ def fit(nomeFileDati : str, nomeModello : str, *, eseguiFit: bool = True, rappFa
         ax.legend()
 
     plt.show()
+    return min if 'min' in locals() else None
 
 if __name__ == "__main__":
     #print(f"{len(sys.argv)}")
